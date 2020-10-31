@@ -9,6 +9,7 @@ import json
 import plotly.graph_objs as go
 import numpy as np
 from dash.dependencies import Input, Output
+
 with open('geojson-counties-fips.json') as f:
     counties = json.load(f)
 
@@ -18,50 +19,18 @@ df['R_plus'] = df['Rhigh'] - df['R_mean']
 df['dailycases_p100k_7d_avg'] = df['dailycases_p100k_7d_avg'].round(5)
 df['inf_potential_p100k'] = df['inf_potential_p100k'].round(5)
 
-df.rename(columns={'county_name': 'County',
-                    'population' : 'Population',
-                    'dailycases_p100k_7d_avg' : 'Daily Cases',
-                    'R_mean' : 'R mean',
-                    'R_low' : 'R Low',
-                    'Rhigh' : 'R High',
-                    'inf_potential_p100k' : 'Infection Potential'},
+df.rename(columns = {'county_name' : 'County', 
+                    'population' : 'Population', 
+                    'dailycases_p100k_7d_avg' : 'Daily Cases', 
+                    'R_mean' : 'R mean', 
+                    'R_low' : 'R Low', 
+                    'Rhigh' : 'R High', 
+                    'inf_potential_p100k' : 'Infection Potential'}, 
                     inplace = True)
 
 
 df_time = pd.read_csv('PA_data3.csv')
-
-# fig = px.scatter(df, x="R mean", y="Daily Cases",
-#                  hover_name="County", hover_data=["R mean", "Daily Cases"],
-#                  error_x="R_plus", error_x_minus="R_minus",
-#                  size = 'Population',
-#                  color = 'Infection Potential',
-#                  title = 'PA Counties',
-#                  labels={
-#                      "Log_r_mean": "R rate (log)",
-#                      "Daily Cases": "Daily cases per 100k (7 day average)",
-#                      "Infection Potential" : "Inf Potential",
-#                      "Population" : "Population"
-#                  },
-#                  log_x = True,
-#                  range_x=[0.2, 5],
-#                  range_y=[0,df['Daily Cases'].max()+1],
-#                  )
-# fig.update_layout(
-#                 autosize=False,
-#                 width=900,
-#                 height=900,
-#                 hoverlabel=dict(
-#                         bgcolor="white",
-#                         font_size=16,
-#                         font_family="Rockwell",
-#         ),
-#                 title={
-#                     'y':.91,
-#                     'x':0.5,
-#                     'xanchor': 'center',
-#                     'yanchor': 'top'},
-#                 coloraxis = {'showscale' : True})
-# fig.update_layout(showlegend=False)
+df_time['Date']= pd.to_datetime(df_time['Date'])
 
 fig = go.Figure(data=go.Scatter(x = df['R mean'],
                                 y = df['Daily Cases'],
@@ -145,7 +114,7 @@ layout = go.Layout(geo=dict(bgcolor= 'rgba(0,0,0,0)'),
 )
 
 fig2.update_layout(layout)
-fig2.update_geos(fitbounds="locations",
+fig2.update_geos(fitbounds="locations", 
                 visible=True,
                 )
 
@@ -173,7 +142,13 @@ app.layout = html.Div([
         ]),
         dash_table.DataTable(
             id = 'datatable-PA',
-                columns=[{"name": i, "id": i} for i in ['County', 'Population', 'Daily Cases', 'R Low', 'R mean', 'R High', 'Infection Potential']],
+                columns=[{"name": i, "id": i} for i in ['County', 
+                                                        'Population', 
+                                                        'Daily Cases', 
+                                                        'R Low', 
+                                                        'R mean', 
+                                                        'R High', 
+                                                        'Infection Potential']],
                 data=df.to_dict('records'),
                 editable = False,
                 sort_action = 'native',
@@ -217,7 +192,7 @@ app.layout = html.Div([
        dcc.Graph(
             id = 'time_graph',
             figure = {}
-        )
+        ),
     ])
     ])
 
@@ -228,26 +203,38 @@ app.layout = html.Div([
 def update_graph(option_county):
     dff = df_time.copy()
     dff = dff[dff['Admin2'] == option_county]
+    fig1 = go.Figure(data = [
+            go.Bar(name = 'Cases',
+                    x = dff['Date'],
+                    y = dff['diff'],
+                    marker_color = 'blue',
+                    hovertemplate = 'Cases: %{y}<br><extra></extra>'),
+            go.Bar(name = 'Deaths',
+                    x = dff['Date'],
+                    y = dff['Daily Deaths'],
+                    marker_color = 'red',
+                    hovertemplate = 'Deaths: %{y}<br><extra></extra>')
+    ])
+    fig1.update_layout(barmode = 'stack',
+                    title_text = str(option_county) +
+                                ' County Confirmed')
 
-    fig1 = px.bar(x=dff['Date'],
-            y=dff['diff'],
-            labels = {'x': 'Date', 'y': 'Confirmed Cases'},
-            title = str(option_county) + ' County Confirmed Cases'
-            )
-    fig1.add_trace(go.Scatter(x=dff['Date'],
+    fig1.add_trace(go.Scatter(x=dff['Date'], 
                             y = dff['7_day_avg'],
                             mode = 'lines',
                             name = '7 Day Average',
-                            line=dict(color='blue')
+                            line=dict(color='rgb(184,55,223)'),
+                            hovertemplate = '7 Day Average: %{y}<br><extra></extra>'
                             )
                     )
-    fig1.update_traces(marker_color='rgb(255,0,0)')
     fig1.update_layout(
                     title={
                         'y':.91,
                         'x':0.5,
                         'xanchor': 'center',
-                        'yanchor': 'top'}
+                        'yanchor': 'top'},
+                    xaxis_title="Date",
+                    yaxis_title="Daily Count",
                         )
     return fig1
 
