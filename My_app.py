@@ -65,7 +65,7 @@ fig.update_layout(
     font_family="Ariel",
     font_color='Black',
     title={
-        'text': 'Pennslyvania Counties',
+        'text': 'Pennsylvania Counties',
         'font_size' : 20,
         'y':0.95,
         'x':0.5,
