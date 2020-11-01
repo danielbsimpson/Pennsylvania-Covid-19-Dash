@@ -28,7 +28,7 @@ df.rename(columns={'county_name': 'County',
                    'inf_potential_p100k': 'Infection Potential'},
           inplace=True)
 
-df_time = pd.read_csv('PA_data3.csv')
+df_time = pd.read_csv('PA_time_series_data.csv')
 df_time['Date'] = pd.to_datetime(df_time['Date'])
 
 fig = go.Figure(data=go.Scatter(x=df['R mean'],
@@ -212,7 +212,7 @@ def update_graph(option_county):
     fig1 = go.Figure(data=[
         go.Bar(name='Cases',
                x=dff['Date'],
-               y=dff['diff'],
+               y=dff['Daily Confirmed'],
                marker_color='blue',
                hovertemplate='Cases: %{y}<br><extra></extra>'),
         go.Bar(name='Deaths',
