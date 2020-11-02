@@ -221,7 +221,8 @@ def update_graph(option_county):
                marker_color='red',
                hovertemplate='Deaths: %{y}<br><extra></extra>')
     ])
-    fig1.update_layout(title_text='{0} County Confirmed'.format(str(option_county)),
+    fig1.update_layout(title_text='{0} County<br>Total Cases: {1}, Total Deaths: {2}'.format(str(option_county), str(
+        dff['Confirmed'].iloc[-1]), str(dff['Deaths'].iloc[-1])),
                        barmode='stack')
 
     fig1.add_trace(go.Scatter(x=dff['Date'],
