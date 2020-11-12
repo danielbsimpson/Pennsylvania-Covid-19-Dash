@@ -31,72 +31,6 @@ df.rename(columns={'county_name': 'County',
 df_time = pd.read_csv('PA_time_series_data.csv')
 df_time['Date'] = pd.to_datetime(df_time['Date'])
 
-fig = go.Figure(data=go.Scatter(x=df['R mean'],
-                                y=df['Daily Cases'],
-                                error_x=dict(type='data',
-                                             symmetric=False,
-                                             array=df['R_plus'],
-                                             arrayminus=df['R_minus'],
-                                             thickness=0.5,
-                                             ),
-                                mode='markers',
-                                marker=dict(size=np.log2(df['Population']),
-                                            color=df['Infection Potential'],
-                                            colorbar=dict(
-                                                title="Infection <br>Potential"
-                                            ),
-                                            colorscale="matter"
-                                            ),
-                                hovertemplate=df['County'] +
-                                '<br>R Rate (mean): %{x:.2f}' +
-                                '<br>Daily Cases: %{y}<br><extra></extra>',
-                                )
-                )
-fig.update_layout(
-    autosize=False,
-    width=900,
-    height=900,
-    hoverlabel=dict(
-        bgcolor="white",
-        font_size=16,
-        font_family="Rockwell",
-    ),
-    font_family="Ariel",
-    font_color='Black',
-    title={
-        'text': 'Pennsylvania Counties',
-        'font_size': 20,
-        'y': 0.95,
-        'x': 0.5,
-        'xanchor': 'center',
-        'yanchor': 'top'},
-    xaxis_title={
-        'text': "R rate",
-        'font_size': 16
-    },
-    yaxis_title={
-        'text': "Daily Cases per 100k (7 Day Average)",
-        'font_size': 16
-    },
-    shapes=[dict(
-        type='line',
-        x0=1,
-        x1=1,
-        y0=0,
-        y1=68,
-        line=dict(
-            color='Black',
-            dash='dash'))
-            ],
-    showlegend=False,
-)
-fig.update_xaxes(
-    range=[0.2, 6]
-)
-fig.update_yaxes(
-    range=(0, 68)
-)
-
 fig2 = px.choropleth(df, geojson=counties, locations='fips', color='Infection Potential',
                      scope="usa",
                      labels={
@@ -181,8 +115,8 @@ app.layout = html.Div([
             },
         ),
         dcc.Graph(
-            id='graph_us',
-            figure=fig
+            id='r_scatter',
+            figure={}
         ),
         dcc.Graph(
             id='choropleth',
@@ -201,6 +135,79 @@ app.layout = html.Div([
     ])
 ])
 
+@app.callback(
+    Output(component_id='r_scatter', component_property= 'figure'),
+    [Input(component_id='datatable-PA', component_property="derived_virtual_data")]
+)
+def update_scatter(all_rows_data):
+    dff = pd.DataFrame(all_rows_data)
+    fig0 = go.Figure(data=go.Scatter(x=dff['R mean'],
+                                y=dff['Daily Cases'],
+                                error_x=dict(type='data',
+                                             symmetric=False,
+                                             array=dff['R_plus'],
+                                             arrayminus=dff['R_minus'],
+                                             thickness=0.5,
+                                             ),
+                                mode='markers',
+                                marker=dict(size=np.log2(dff['Population']),
+                                            color=dff['Infection Potential'],
+                                            colorbar=dict(
+                                                title="Infection <br>Potential"
+                                            ),
+                                            colorscale="matter"
+                                            ),
+                                hovertemplate=dff['County'] +
+                                '<br>R Rate (mean): %{x:.2f}' +
+                                '<br>Daily Cases: %{y}<br><extra></extra>',
+                                )
+                )
+    fig0.update_layout(
+        autosize=False,
+        width=900,
+        height=900,
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=16,
+            font_family="Rockwell",
+        ),
+        font_family="Ariel",
+        font_color='Black',
+        title={
+            'text': 'Pennsylvania Counties',
+            'font_size': 20,
+            'y': 0.95,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'},
+        xaxis_title={
+            'text': "R rate",
+            'font_size': 16
+        },
+        yaxis_title={
+            'text': "Daily Cases per 100k (7 Day Average)",
+            'font_size': 16
+        },
+        shapes=[dict(
+            type='line',
+            x0=1,
+            x1=1,
+            y0=0,
+            y1=68,
+            line=dict(
+                color='Black',
+                dash='dash'))
+                ],
+        showlegend=False,
+    )
+    fig0.update_xaxes(
+        range=[0.2, 6]
+    )
+    fig0.update_yaxes(
+        range=(0, 68)
+    )
+    return fig0
+    
 
 @app.callback(
     Output(component_id='time_graph', component_property='figure'),
