@@ -43,9 +43,9 @@ layout = go.Layout(geo=dict(bgcolor='rgba(0,0,0,0)'),
                    title=go.layout.Title(
                        text="Pennsylvania Infection Potential by County",
                        x=0.5
-                   ),
-                   font=dict(size=16)
-                   )
+),
+    font=dict(size=16)
+)
 
 fig2.update_layout(layout)
 fig2.update_geos(fitbounds="locations",
@@ -132,11 +132,16 @@ app.layout = html.Div([
             id='time_graph',
             figure={}
         ),
+        dcc.Graph(
+            id='R_rate',
+            figure={}
+        ),
     ])
 ])
 
+
 @app.callback(
-    Output(component_id='r_scatter', component_property= 'figure'),
+    Output(component_id='r_scatter', component_property='figure'),
     [Input(component_id='datatable-PA', component_property="derived_virtual_data")]
 )
 def update_scatter(all_rows_data):
@@ -207,15 +212,17 @@ def update_scatter(all_rows_data):
         range=(0, 68)
     )
     return fig0
-    
+
 
 @app.callback(
-    Output(component_id='time_graph', component_property='figure'),
+    [Output(component_id='time_graph', component_property='figure'),
+     Output(component_id='R_rate', component_property='figure')],
     [Input(component_id='drop_bar', component_property='value')]
 )
 def update_graph(option_county):
     dff = df_time.copy()
     dff = dff[dff['Admin2'] == option_county]
+    dff = dff[dff['Confirmed'] >= 1]
     fig1 = go.Figure(data=[
         go.Bar(name='Cases',
                x=dff['Date'],
@@ -230,7 +237,7 @@ def update_graph(option_county):
     ])
     fig1.update_layout(title_text='{0} County<br>Total Cases: {1}, Total Deaths: {2}'.format(str(option_county), str(
         dff['Confirmed'].iloc[-1]), str(dff['Deaths'].iloc[-1])),
-                       barmode='stack')
+        barmode='stack')
 
     fig1.add_trace(go.Scatter(x=dff['Date'],
                               y=dff['7_day_avg'],
@@ -248,8 +255,51 @@ def update_graph(option_county):
             'yanchor': 'top'},
         xaxis_title="Date",
         yaxis_title="Daily Count",
+        hovermode="x",
     )
-    return fig1
+
+    r_df = pd.read_csv('R files/' + str(option_county) + '_r.csv')
+    r_df['Date'] = pd.to_datetime(r_df['Date'])
+    type(r_df['Mean'] - r_df['0.05'])
+    type(r_df['Mean'])
+    fig3 = go.Figure([
+        go.Scatter(
+            name='R mean',
+            x=r_df['Date'],
+            y=r_df['Mean'],
+            mode='lines',
+            line=dict(color='rgb(31, 119, 180)'),
+        ),
+        go.Scatter(
+            name='Upper Bound',
+            x=r_df['Date'],
+            y=r_df['Mean']+(r_df['0.95'] - r_df['Mean']),
+            mode='lines',
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='Lower Bound',
+            x=r_df['Date'],
+            y=r_df['Mean']-(r_df['Mean'] - r_df['0.05']),
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(68, 68, 68, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        )
+    ])
+    fig3.update_layout(
+        yaxis_title='R rate',
+        title='Reproduction rate of Covid-19 in '
+        + str(option_county)
+        + ' county with 95% CI<br>Mean SI = 3.96<br>Standard deviation SI = 4.75',
+        hovermode="x"
+    )
+
+    return fig1, fig3
 
 
 if __name__ == '__main__':
