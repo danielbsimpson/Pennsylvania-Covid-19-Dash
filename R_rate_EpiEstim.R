@@ -632,6 +632,7 @@ write.csv(Butler_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-
 write.csv(Cambria_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Cambria_r.csv")
 write.csv(Cameron_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Cameron_r.csv")
 write.csv(Carbon_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Carbon_r.csv")
+write.csv(Centre_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Centre_r.csv")
 write.csv(Chester_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Chester_r.csv")
 write.csv(Clarion_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Clarion_r.csv")
 write.csv(Clearfield_r, "C:/Users/Damien/Desktop/Data Science Projects/Pennsylvania-Covid-19-Dash/R files/Clearfield_r.csv")
