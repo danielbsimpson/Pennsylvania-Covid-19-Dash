@@ -13,35 +13,52 @@ from dash.dependencies import Input, Output
 with open('geojson-counties-fips.json') as f:
     counties = json.load(f)
 
-df = pd.read_csv('PA_data.csv')
+df = pd.read_csv('PA_data_update.csv')
 df['R_minus'] = df['R_mean'] - df['R_low']
-df['R_plus'] = df['Rhigh'] - df['R_mean']
+df['R_plus'] = df['R_high'] - df['R_mean']
 df['dailycases_p100k_7d_avg'] = df['dailycases_p100k_7d_avg'].round(5)
-df['inf_potential_p100k'] = df['inf_potential_p100k'].round(5)
+df['R_mean'] = df['R_mean'].round(5)
+df['R_low'] = df['R_low'].round(5)
+df['R_high'] = df['R_high'].round(5)
+
+#df['inf_potential_p100k'] = df['inf_potential_p100k'].round(5)
 
 df.rename(columns={'county_name': 'County',
                    'population': 'Population',
                    'dailycases_p100k_7d_avg': 'Daily Cases',
                    'R_mean': 'R mean',
                    'R_low': 'R Low',
-                   'Rhigh': 'R High',
-                   'inf_potential_p100k': 'Infection Potential'},
+                   'R_high': 'R High'},
           inplace=True)
 
+df['Numerical'] = df.County.astype('category').cat.codes
 df_time = pd.read_csv('PA_time_series_data.csv')
 df_time['Date'] = pd.to_datetime(df_time['Date'])
 
-fig2 = px.choropleth(df, geojson=counties, locations='fips', color='Infection Potential',
+color_list = ['#7e1e9c', '#15b01a', '#0343df', '#ff81c0', '#653700', '#e50000',
+            '#95d0fc', '#029386', '#f97306', '#96f97b', '#c20078', '#ffff14',
+            '#929591', '#bf77f6', '#033500', '#06c2ac', '#00035b', '#d1b26f',
+            '#00ffff', '#ae7181', '#35063e', '#650021', '#6e750e', '#ff796c',
+            '#7e1e9c', '#15b01a', '#0343df', '#ff81c0', '#653700', '#e50000',
+            '#95d0fc', '#029386', '#f97306', '#96f97b', '#c20078', '#ffff14',
+            '#929591', '#bf77f6', '#033500', '#06c2ac', '#00035b', '#d1b26f',
+            '#00ffff', '#ae7181', '#35063e', '#650021', '#6e750e', '#ff796c',
+            '#ffff14',
+            '#929591', '#bf77f6', '#033500', '#06c2ac', '#00035b', '#d1b26f',
+            '#00ffff', '#ae7181', '#35063e', '#650021', '#6e750e', '#ff796c',
+            '#95d0fc', '#029386', '#f97306', '#96f97b', '#c20078', '#ffff14',]
+df['Color'] = color_list
+fig2 = px.choropleth(df, geojson=counties, locations='fips', color='R mean',
                      scope="usa",
                      labels={
-                         'Infection Potential': 'Infection Potential <br>per 100k'},
+                         'R mean': 'Reproduction Rate <br>mean'},
                      color_continuous_scale="reds",
                      hover_name=df['County'],
-                     range_color=[0, df['Infection Potential'].max()]
+                     range_color=[0, df['R mean'].max()]
                      )
 layout = go.Layout(geo=dict(bgcolor='rgba(0,0,0,0)'),
                    title=go.layout.Title(
-                       text="Pennsylvania Infection Potential by County",
+                       text="Pennsylvania Reproduction Rate by County",
                        x=0.5
 ),
     font=dict(size=16)
@@ -72,7 +89,7 @@ app.layout = html.Div([
         ]),
 
         dbc.Row([
-            dbc.Col(dbc.Card(html.H3(children='Data from 27-Oct-2020',
+            dbc.Col(dbc.Card(html.H3(children='Data from 22-Nov-2020',
                                      className="text-center text-light bg-dark"),
                              body=True, color="dark"),
                     className="mb-4"
@@ -85,8 +102,7 @@ app.layout = html.Div([
                                                     'Daily Cases',
                                                     'R Low',
                                                     'R mean',
-                                                    'R High',
-                                                    'Infection Potential']],
+                                                    'R High']],
             data=df.to_dict('records'),
             editable=False,
             sort_action='native',
@@ -146,27 +162,11 @@ app.layout = html.Div([
 )
 def update_scatter(all_rows_data):
     dff = pd.DataFrame(all_rows_data)
-    fig0 = go.Figure(data=go.Scatter(x=dff['R mean'],
-                                y=dff['Daily Cases'],
-                                error_x=dict(type='data',
-                                             symmetric=False,
-                                             array=dff['R_plus'],
-                                             arrayminus=dff['R_minus'],
-                                             thickness=0.5,
-                                             ),
-                                mode='markers',
-                                marker=dict(size=np.log2(dff['Population']),
-                                            color=dff['Infection Potential'],
-                                            colorbar=dict(
-                                                title="Infection <br>Potential"
-                                            ),
-                                            colorscale="matter"
-                                            ),
-                                hovertemplate=dff['County'] +
-                                '<br>R Rate (mean): %{x:.2f}' +
-                                '<br>Daily Cases: %{y}<br><extra></extra>',
-                                )
-                )
+    fig0 = px.scatter(dff, x="R mean", y="Daily Cases",
+                size="Population", color="County", hover_name="County",
+                size_max=20, range_x=[0,4], range_y=[0,dff['Daily Cases'].max()],
+                error_x= "R_plus", error_x_minus= "R_minus")
+
     fig0.update_layout(
         autosize=False,
         width=900,
@@ -198,18 +198,18 @@ def update_scatter(all_rows_data):
             x0=1,
             x1=1,
             y0=0,
-            y1=68,
+            y1=dff['Daily Cases'].max() + 10,
             line=dict(
                 color='Black',
                 dash='dash'))
                 ],
-        showlegend=False,
+        showlegend=True,
     )
     fig0.update_xaxes(
-        range=[0.2, 6]
+        range=[0, 4]
     )
     fig0.update_yaxes(
-        range=(0, 68)
+        range=(0, dff['Daily Cases'].max() + 10)
     )
     return fig0
 
